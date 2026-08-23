@@ -1,0 +1,38 @@
+# Qwen2.5 Quantization
+This repository contains quantization experiments on the [Qwen2.5](https://qwen.ai/blog?id=qwen2.5-llm) LLM. The following sections describe the steps necessary to download, quantize, and benchmark the quantized model.
+
+## Step 1 - Model download
+First, download a Qwen2.5 version (e.g., 3B, 7B, 32B, etc). We recommend using the [Hugging Face CLI](https://huggingface.co/docs/huggingface_hub/main/en/guides/cli). The example below showcases how to download the Qwen2.5 3B-Instruct model from the Hugging Face repository using the CLI.
+``` shell
+hf download Qwen/Qwen2.5-3B-Instruct --local-dir <path-to-model>
+```
+
+## Step 2 - Quantization
+We defined four quantization strategies (all using 4-bit): GPTQ, GGUF, AWQ, and EXL3. To generate the quantized versions of the model, use the helper script below. Each quantized model will be stored in a directory named `"<path-to-model>-4bit-<strategy-name>"`.
+
+``` shell
+./quantize-qwen2.5.sh <path-to-model>
+```
+
+## Step 3 - Benchmark
+Finally, run the benchmark for a given model. To properly compare the quantized models with the base model, the benchmark script runs the same tests described in the [Qwen2 benchmark.5 technical report](https://arxiv.org/pdf/2412.15115). The benchmarks executed are listed below by category.
+- General Tasks
+    - MMLU-Pro
+    - MMLU-redux
+- Mathematics & Science Tasks
+    - GPQA
+    - GSM8K
+- Coding Tasks
+    - HumanEval
+    - MBPP
+    - LiveCodeBench
+- Alignment Tasks
+    - IFEval
+    - Arena-Hard
+    - MTbench
+
+To execute the benchmark, run the Python script as below. The benchmark results are stored in the "benchmark" directory, which is created automatically in the same folder as the benchmark Python script.
+
+``` shell
+python3 benchmark.py <path-to-quantized-model>
+```
