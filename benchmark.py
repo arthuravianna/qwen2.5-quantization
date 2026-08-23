@@ -12,12 +12,12 @@ def run_benchmark(model_dir: str, test_option: str) -> None:
     TEST_OPTIONS = {
         "mmlu_pro": eval.benchmarks.mmlu_pro(apply_chat_template=True, batch_size=4),
         "gsm8k": eval.benchmarks.gsm8k(apply_chat_template=True, batch_size=4),
-        "mmlu_redux": eval.benchmarks.mmlu_redux(apply_chat_template=True, batch_size=4),
-        "GPQA": eval.benchmarks.GPQA(apply_chat_template=True, batch_size=4),
-        "HumanEval": eval.benchmarks.HumanEval(apply_chat_template=True, batch_size=4),
-        "MBPP": eval.benchmarks.MBPP(apply_chat_template=True, batch_size=4),
-        "LiveCodeBench": eval.benchmarks.LiveCodeBench(apply_chat_template=True, batch_size=4),
-        "IFEval": eval.benchmarks.IFEval(apply_chat_template=True, batch_size=4),
+        "mmlu_redux": eval.benchmarks.mmlu_redux(batch_size=4),
+        "GPQA": eval.benchmarks.GPQA(batch_size=4),
+        "HumanEval": eval.benchmarks.HumanEval(batch_size=4),
+        "MBPP": eval.benchmarks.MBPP(batch_size=4),
+        "LiveCodeBench": eval.benchmarks.LiveCodeBench(batch_size=4),
+        "IFEval": eval.benchmarks.IFEval(batch_size=4),
     }
 
     if not test_option:
