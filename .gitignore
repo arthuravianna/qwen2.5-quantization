@@ -1,3 +1,5 @@
 .venv
 logs
 quantization
+benchmarks
+__pycache__

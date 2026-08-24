@@ -31,6 +31,12 @@ Finally, run the benchmark for a given model. To properly compare the quantized 
     - Arena-Hard
     - MTbench
 
+Some benchmarks, like GPQA, may used gated datasets. Therefore, set a Hugging Face access token to be able to run all tests.
+
+``` shell
+export HF_TOKEN <your Hugging Face token>
+```
+
 To execute the benchmark, run the Python script as below. The benchmark results are stored in the "benchmark" directory, which is created automatically in the same folder as the benchmark Python script.
 
 ``` shell
