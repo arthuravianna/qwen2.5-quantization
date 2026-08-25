@@ -4,13 +4,14 @@ from pathlib import PurePath
 import sys
 import json
 from datasets import load_dataset
+import torch
 from transformers import AutoTokenizer
 from gptqmodel import BACKEND, AWQConfig, GGUFConfig, GPTQConfig, GPTQModel 
+from gptqmodel.models._const import DEVICE
 from gptqmodel.quantization import EXL3Config, FORMAT
 
 QUANTIZATION_METHODS = ["gptq", "gguf", "awq", "exl3"]
-BITS=4
-
+DEFAULT_BITS = 4
 
 def _compute_path_size_bytes(path):
     if not os.path.exists(path):
@@ -45,7 +46,7 @@ def _size_breakdown(size_bytes):
     }
 
 
-def build_quantization_summary(model_path, quant_path, quant_method):
+def build_quantization_summary(model_path, quant_path, quant_method, bits):
     pre_size_bytes = _compute_path_size_bytes(model_path)
     quant_size_bytes = _compute_path_size_bytes(quant_path)
 
@@ -59,7 +60,7 @@ def build_quantization_summary(model_path, quant_path, quant_method):
     summary = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "quantization_method": quant_method,
-        "bits": BITS,
+        "bits": bits,
         "source_model_path": model_path,
         "quantized_model_path": quant_path,
         "pre_quantized_model_size": _size_breakdown(pre_size_bytes),
@@ -74,7 +75,7 @@ def build_quantization_summary(model_path, quant_path, quant_method):
     return summary
 
 
-def quantize_gptq(model_path, quant_path):
+def quantize_gptq(model_path, quant_path, bits: int):
     print(f"Quantizing {model_path} to {quant_path} using GPTQ method.")
     # If model_id is a Hugging Face repo name, it will:
     #   use the local HF cache if already present
@@ -103,7 +104,7 @@ def quantize_gptq(model_path, quant_path):
     # dynamic={...}: per-module overrides/skips
     
     quant_config = GPTQConfig(
-        bits=BITS,
+        bits=bits,
         group_size=128,
     )
 
@@ -124,11 +125,12 @@ def quantize_gptq(model_path, quant_path):
     return quantization_result
 
 
-def quantize_gguf(model_path, quant_path):
+def quantize_gguf(model_path, quant_path, bits: int):
     print(f"Quantizing {model_path} to {quant_path} using GGUF method.")
 
     qcfg = GGUFConfig(
-        bits=BITS
+        bits=bits,
+        device=DEVICE.CPU, # CPU due to GGUF's current lack of GPU support
     )
 
     model = GPTQModel.load(model_path, qcfg)
@@ -138,7 +140,7 @@ def quantize_gguf(model_path, quant_path):
     return quantization_result
 
 
-def quantize_awq(model_path, quant_path):
+def quantize_awq(model_path, quant_path, bits: int):
     print(f"Quantizing {model_path} to {quant_path} using AWQ method.")
 
     calibration_dataset = load_dataset(
@@ -148,7 +150,7 @@ def quantize_awq(model_path, quant_path):
     ).select(range(1024))["text"]
 
     qcfg = AWQConfig(
-        bits=BITS
+        bits=bits
     )
 
     model = GPTQModel.load(model_path, qcfg)
@@ -158,7 +160,7 @@ def quantize_awq(model_path, quant_path):
     return quantization_result
 
 
-def quantize_exl3(model_path, quant_path):
+def quantize_exl3(model_path, quant_path, bits: float):
     print(f"Quantizing {model_path} to {quant_path} using EXL3 method.")
 
     calibration_dataset = load_dataset(
@@ -168,7 +170,7 @@ def quantize_exl3(model_path, quant_path):
     ).select(range(1024))["text"]
 
     qcfg = EXL3Config(
-        bits=float(BITS),        # target average bits-per-weight
+        bits=bits,        # target average bits-per-weight
         head_bits=6.0,   # optional higher bitrate for attention heads / sensitive tensors
         codebook="mcg",  # one of: mcg, mul1, 3inst
     )
@@ -182,22 +184,26 @@ def quantize_exl3(model_path, quant_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: python quantize.py <model_path> <quant_path> <quantization_method>")
+        print(f"Usage: python quantize.py <model_path> <quant_path> <quantization_method> <bits>(optional - default {DEFAULT_BITS})")
         sys.exit(1)
     
     model_path = sys.argv[1]
     quant_path = sys.argv[2]
     quant_method = sys.argv[3].lower()
+    bits = sys.argv[4] if len(sys.argv) > 4 else DEFAULT_BITS
 
     quantization_result = None
     if quant_method == "gptq":
-        quantization_result = quantize_gptq(model_path, quant_path)
+        quantization_result = quantize_gptq(model_path, quant_path, int(bits))
     elif quant_method == "gguf":
-        quantization_result = quantize_gguf(model_path, quant_path)
+        quantization_result = quantize_gguf(model_path, quant_path, int(bits))
     elif quant_method == "awq":
-        quantization_result = quantize_awq(model_path, quant_path)
+        if int(bits) != 4:
+            print("AWQ quantization currently only supports 4 bits. Using 4 bits.")
+            sys.exit(1)
+        quantization_result = quantize_awq(model_path, quant_path, int(bits))
     elif quant_method == "exl3":
-        quantization_result = quantize_exl3(model_path, quant_path)
+        quantization_result = quantize_exl3(model_path, quant_path, float(bits))
     else:
         print(f"Unknown quantization method: {quant_method}")
         sys.exit(1)
@@ -208,6 +214,6 @@ if __name__ == "__main__":
     os.makedirs(result_dir, exist_ok=True)
 
     result_file = os.path.join(result_dir, f"{quant_method}.json")
-    result_summary = build_quantization_summary(model_path, quant_path, quant_method)
+    result_summary = build_quantization_summary(model_path, quant_path, quant_method, bits)
     with open(result_file, "w") as f:
         json.dump(result_summary, f, indent=4)
