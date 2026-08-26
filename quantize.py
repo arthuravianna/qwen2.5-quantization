@@ -1,4 +1,5 @@
-from datetime import datetime
+#from datetime import datetime
+import datetime
 import os
 from pathlib import PurePath
 import sys
@@ -58,7 +59,7 @@ def build_quantization_summary(model_path, quant_path, quant_method, bits):
             percent_reduction = round((size_diff_bytes / pre_size_bytes) * 100, 2)
 
     summary = {
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "quantization_method": quant_method,
         "bits": bits,
         "source_model_path": model_path,
@@ -74,6 +75,17 @@ def build_quantization_summary(model_path, quant_path, quant_method, bits):
 
     return summary
 
+def prepare_calibration_dataset():
+    ds = load_dataset(
+            "Brench/MMLU-Pro-CoT-Train-84K",
+            split="train"
+        )
+    ds = ds.map(
+        lambda x: {
+            "text": "Question: " + x["question"] + "\nAnswer: " + x["answer"] # "Question: <question> \nAnswer: <answer>"
+        }
+    )
+    return ds.select(range(256))["text"]
 
 def quantize_gptq(model_path, quant_path, bits: int):
     print(f"Quantizing {model_path} to {quant_path} using GPTQ method.")
@@ -85,12 +97,8 @@ def quantize_gptq(model_path, quant_path, bits: int):
 
     # Simple calibration dataset, following GPTQModel's docs pattern
     # Downloads the calibration dataset if it is not already cached
-    calibration_dataset = load_dataset(
-        "allenai/c4",
-        data_files="en/c4-train.00001-of-01024.json.gz",
-        split="train"
-    ).select(range(256))["text"]
-
+    
+    calibration_dataset = prepare_calibration_dataset()
 
     # Then tune if needed:
 
@@ -143,11 +151,7 @@ def quantize_gguf(model_path, quant_path, bits: int):
 def quantize_awq(model_path, quant_path, bits: int):
     print(f"Quantizing {model_path} to {quant_path} using AWQ method.")
 
-    calibration_dataset = load_dataset(
-        "allenai/c4",
-        data_files="en/c4-train.00001-of-01024.json.gz",
-        split="train",
-    ).select(range(1024))["text"]
+    calibration_dataset = prepare_calibration_dataset()
 
     qcfg = AWQConfig(
         bits=bits
@@ -163,11 +167,7 @@ def quantize_awq(model_path, quant_path, bits: int):
 def quantize_exl3(model_path, quant_path, bits: float):
     print(f"Quantizing {model_path} to {quant_path} using EXL3 method.")
 
-    calibration_dataset = load_dataset(
-        "allenai/c4",
-        data_files="en/c4-train.00001-of-01024.json.gz",
-        split="train",
-    ).select(range(1024))["text"]
+    calibration_dataset = prepare_calibration_dataset()
 
     qcfg = EXL3Config(
         bits=bits,        # target average bits-per-weight
