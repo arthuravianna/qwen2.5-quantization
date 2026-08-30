@@ -11,7 +11,13 @@ hf download Qwen/Qwen2.5-3B-Instruct --local-dir <path-to-model>
 We defined four quantization strategies (all using 4-bit): GPTQ, GGUF, AWQ, and EXL3. To generate the quantized versions of the model, use the helper script below. Each quantized model will be stored in a directory named `"<path-to-model>-4bit-<strategy-name>"`.
 
 ``` shell
-./quantize-qwen2.5.sh <path-to-model>
+./quantize-qwen2.5.sh <path-to-model> 4
+```
+
+OR
+
+```shell
+docker run --rm --gpus all -e HF_TOKEN=<hf_token> -v <path-to-model>:/usr/llm -v <host-path-to-logs>:/app/data --entrypoint /app/quantize-qwen2.5.sh viannaarthur/quantize-qwen2.5 /usr/llm/Qwen2.5-0.5B-Instruct 4
 ```
 
 ## Step 3 - Benchmark
@@ -43,9 +49,21 @@ To execute the benchmark, run the Python script as below. The benchmark results 
 python3 benchmark.py <path-to-quantized-model>
 ```
 
+OR
+
+``` shell
+docker run --rm --gpus all -e HF_TOKEN=<hf_token> -v <path-to-model>:/usr/llm -v <host-path-to-logs>:/app/data --entrypoint python3 viannaarthur/quantize-qwen2.5 benchmark.py /usr/llm/Qwen2.5-0.5B-Instruct-GPTQ-4bit mmlu_redux
+```
+
 ## Step 4 - Performance Evaluation
 Run a performance evaluation that consists of token metrics, such as time to first token (TTFT) and token per second (TPS), and perplexity. Both performance metrics are computed by the performance Python script and is executed as below:
 
 ``` shell
 python3 performance.py <path-to-quantized-model>
+```
+
+OR
+
+``` shell
+docker run --rm --gpus all -e HF_TOKEN=<hf_token> -v <path-to-model>:/usr/llm -v <host-path-to-logs>:/app/data --entrypoint python3 viannaarthur/quantize-qwen2.5 performance.py /usr/llm/Qwen2.5-0.5B-Instruct-GPTQ-4bit
 ```

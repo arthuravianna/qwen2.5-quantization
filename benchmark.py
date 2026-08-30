@@ -7,7 +7,7 @@ from benchmark_patches import patch_ifeval_evaluate, patch_mmlu_redux_result_met
 
 
 def save_results_to_json(result: dict, test_option: str) -> str:
-    result_dir = f"benchmarks/{result['model']}/{test_option}"
+    result_dir = f"data/benchmarks/{result['model']}/{test_option}"
     os.makedirs(result_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

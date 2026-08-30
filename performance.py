@@ -143,7 +143,7 @@ if __name__ == "__main__":
     tps_metrics = compute_token_generation_metrics(model, tokenizer)
 
     # save results to file
-    result_dir = f"performance/{model_name}"
+    result_dir = f"data/performance/{model_name}"
     os.makedirs(result_dir, exist_ok=True)
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = os.path.join(result_dir, f"{timestamp}.json")

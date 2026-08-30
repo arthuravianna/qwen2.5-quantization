@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     # Save quantization result to a JSON file
     model_name = PurePath(model_path).parts[-1]
-    result_dir = f"quantization/{model_name}"
+    result_dir = f"data/quantization/{model_name}"
     os.makedirs(result_dir, exist_ok=True)
 
     result_file = os.path.join(result_dir, f"{quant_method}.json")
