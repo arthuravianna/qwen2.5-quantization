@@ -15,7 +15,7 @@ We defined four quantization strategies (all using 4-bit): GPTQ, GGUF, AWQ, and 
 ```
 
 ## Step 3 - Benchmark
-Finally, run the benchmark for a given model. To properly compare the quantized models with the base model, the benchmark script runs the same tests described in the [Qwen2 benchmark.5 technical report](https://arxiv.org/pdf/2412.15115). The benchmarks executed are listed below by category.
+Run the benchmark for a given model. To properly compare the quantized models with the base model, the benchmark script runs the same tests described in the [Qwen2 benchmark.5 technical report](https://arxiv.org/pdf/2412.15115). The benchmarks executed are listed below by category.
 - General Tasks
     - MMLU-Pro
     - MMLU-redux
@@ -41,4 +41,11 @@ To execute the benchmark, run the Python script as below. The benchmark results 
 
 ``` shell
 python3 benchmark.py <path-to-quantized-model>
+```
+
+## Step 4 - Performance Evaluation
+Run a performance evaluation that consists of token metrics, such as time to first token (TTFT) and token per second (TPS), and perplexity. Both performance metrics are computed by the performance Python script and is executed as below:
+
+``` shell
+python3 performance.py <path-to-quantized-model>
 ```
