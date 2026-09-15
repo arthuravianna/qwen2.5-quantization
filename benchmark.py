@@ -16,6 +16,20 @@ def save_results_to_json(result: dict, test_option: str) -> str:
         json.dump(result, f, indent=4)
     return filename
 
+def build_engine(model_dir: str, model_config: dict):
+    import evalution as eval
+
+    engine_kwargs = {
+        "backend": "auto",
+        "device": "cuda:0",
+    }
+
+    if "exl3" in model_config.label.lower():
+        print(f"[benchmark] EXL3 model detected: forcing fp16 to avoid exllamav3 dtype mismatch.")
+        engine_kwargs["dtype"] = "float16"
+
+    return eval.GPTQModel(**engine_kwargs)
+
 def run_benchmark(model_dir: str, benchmarks: str) -> None:
     import evalution as eval
 
@@ -38,7 +52,8 @@ def run_benchmark(model_dir: str, benchmarks: str) -> None:
         benchmarks = ",".join(TEST_OPTIONS.keys())
 
     model_cfg = eval.Model(path=model_dir, label=PurePath(model_dir).parts[-1])
-    engine = eval.GPTQModel(backend="auto", device="cuda:0")
+    #engine = eval.GPTQModel(backend="auto", device="cuda:0", dtype="float16")
+    engine = build_engine(model_dir, model_cfg)
     result_files = []
 
     for benchmark in benchmarks.split(","):

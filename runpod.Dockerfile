@@ -1,5 +1,5 @@
 # Use Runpod PyTorch base image
-FROM runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
+FROM runpod/base:1.0.2-cuda1300-ubuntu2404
 
 # Set environment variables
 # This ensures Python output is immediately visible in logs
@@ -21,9 +21,6 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
-
-# Download Qwen/Qwen2.5 14B-Instruct
-RUN hf download Qwen/Qwen2.5-14B-Instruct --local-dir /app/llm
 
 # Copy application files
 COPY *.py .
